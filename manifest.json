@@ -1,0 +1,9 @@
+{
+  "name": "ZimScope",
+  "short_name": "ZimScope",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#064e3b",
+  "icons": []
+}

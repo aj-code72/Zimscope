@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZimScope</title>
+<link rel="manifest" href="manifest.json" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .prose-reader p { margin-bottom: 1rem; line-height: 1.7; color: #334155; }
+  .prose-reader h2 { font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem; }
+  * { transition: none !important; animation: none !important; }
+</style>
+</head>
+<body class="bg-white text-slate-800">
+
+<!-- Top navigation -->
+<header class="border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-emerald-900 flex items-center justify-center text-white font-bold rounded">Z</div>
+      <span class="font-semibold text-lg text-slate-800">ZimScope</span>
+    </div>
+    <nav id="main-nav" class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+      <button id="nav-dashboard" data-label="dashboard" class="hover:text-emerald-900">Dashboard</button>
+      <button id="nav-library" data-label="library" class="hover:text-emerald-900">Library</button>
+      <button id="nav-progress" data-label="progress" class="hover:text-emerald-900">Progress</button>
+    </nav>
+    <div class="flex items-center gap-3">
+      <select id="lang-select" class="hidden md:block text-sm border border-slate-300 rounded px-2 py-1 bg-white">
+        <option value="en">English</option>
+        <option value="sn">Shona</option>
+        <option value="nd">Ndebele</option>
+      </select>
+      <button id="logout-btn" data-label="logout" class="hidden text-sm font-medium text-slate-600 border border-slate-300 rounded px-3 py-1 hover:border-emerald-900">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8">
+
+  <!-- AUTH SCREEN -->
+  <section id="screen-auth" class="max-w-md mx-auto mt-8">
+    <div id="login-panel">
+      <h1 class="text-2xl font-semibold text-slate-800 mb-1">Log in to ZimScope</h1>
+      <p class="text-sm text-slate-500 mb-6">MoPSE-aligned learning for ECD A through Grade 7.</p>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input id="login-email" type="email" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline focus:outline-2 focus:outline-amber-600" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <input id="login-password" type="password" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline focus:outline-2 focus:outline-amber-600" />
+        </div>
+        <div id="login-error" class="hidden text-sm text-red-700 border border-red-200 bg-red-50 rounded px-3 py-2"></div>
+        <button type="submit" class="w-full bg-emerald-900 text-white rounded px-4 py-2 font-medium hover:bg-emerald-800">Log in</button>
+      </form>
+      <p class="text-sm text-slate-500 mt-4">No account yet? <button id="show-register" class="text-emerald-900 font-medium underline">Register</button></p>
+    </div>
+
+    <div id="register-panel" class="hidden">
+      <h1 class="text-2xl font-semibold text-slate-800 mb-1">Create your ZimScope account</h1>
+      <p class="text-sm text-slate-500 mb-6">Register as a student to start learning.</p>
+      <form id="register-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input id="register-email" type="email" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline focus:outline-2 focus:outline-amber-600" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <input id="register-password" type="password" required minlength="6" class="w-full border border-slate-300 rounded px-3 py-2 focus:outline focus:outline-2 focus:outline-amber-600" />
+        </div>
+        <div id="register-error" class="hidden text-sm text-red-700 border border-red-200 bg-red-50 rounded px-3 py-2"></div>
+        <button type="submit" class="w-full bg-emerald-900 text-white rounded px-4 py-2 font-medium hover:bg-emerald-800">Register</button>
+      </form>
+      <p class="text-sm text-slate-500 mt-4">Already have an account? <button id="show-login" class="text-emerald-900 font-medium underline">Log in</button></p>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="screen-dashboard" class="hidden">
+    <h1 id="welcome-name" class="text-2xl font-semibold text-slate-800 mb-2">Welcome back</h1>
+    <p class="text-slate-500 mb-6">Continue where you left off, or choose a new grade to explore.</p>
+    <div class="border border-slate-200 rounded p-6 flex items-center justify-between">
+      <div>
+        <div class="text-sm uppercase tracking-wide text-amber-700 font-semibold">Study library</div>
+        <div class="text-lg font-medium text-slate-800">Browse lessons by grade and subject</div>
+      </div>
+      <button id="dashboard-choose-grade" class="bg-emerald-900 text-white rounded px-4 py-2 text-sm font-medium hover:bg-emerald-800">Open library</button>
+    </div>
+  </section>
+
+  <!-- GRADE SELECTION -->
+  <section id="screen-grade" class="hidden">
+    <h1 data-label="selectGrade" class="text-2xl font-semibold text-slate-800 mb-6">Select your grade</h1>
+    <div id="grade-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- SUBJECT SELECTION -->
+  <section id="screen-subject" class="hidden">
+    <button id="back-to-grade" class="text-sm text-emerald-900 font-medium mb-4">&larr; Change grade</button>
+    <h1 id="subject-grade-title" class="text-2xl font-semibold text-slate-800 mb-1">Grade</h1>
+    <p data-label="selectSubject" class="text-slate-500 mb-6">Select a subject</p>
+    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- LIBRARY / READER -->
+  <section id="screen-library" class="hidden">
+    <button id="back-to-subject" class="text-sm text-emerald-900 font-medium mb-4">&larr; Change subject</button>
+    <h1 id="library-title" class="text-2xl font-semibold text-slate-800 mb-6">Subject</h1>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-1 border border-slate-200 rounded">
+        <div class="px-3 py-2 border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 font-semibold" data-label="lessons">Lessons</div>
+        <div id="lesson-list" class="max-h-[28rem] overflow-y-auto"></div>
+      </div>
+      <div class="md:col-span-2">
+        <div id="reader-frame" class="prose-reader border border-slate-200 rounded p-6 min-h-[20rem]">
+          <div class="text-slate-400">Select a lesson from the list.</div>
+        </div>
+        <button id="start-assessment-btn" data-label="takeAssessment" class="hidden mt-4 bg-amber-700 text-white rounded px-4 py-2 text-sm font-medium hover:bg-amber-800">Take assessment</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="screen-progress" class="hidden">
+    <h1 class="text-2xl font-semibold text-slate-800 mb-6">Your progress</h1>
+    <div id="progress-list" class="border border-slate-200 rounded divide-y divide-slate-200 p-4"></div>
+  </section>
+
+</main>
+
+<!-- QUIZ MODAL -->
+<div id="quiz-modal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-40">
+  <div class="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-slate-800">Assessment</h2>
+      <button id="quiz-close" class="text-slate-500 hover:text-slate-800">Close</button>
+    </div>
+    <form id="quiz-form"></form>
+    <div id="quiz-result" class="hidden border border-emerald-200 bg-emerald-50 rounded p-3 mb-4"></div>
+    <button id="quiz-submit-btn" data-label="submitExam" class="bg-emerald-900 text-white rounded px-4 py-2 text-sm font-medium hover:bg-emerald-800">Submit exam</button>
+  </div>
+</div>
+
+<!-- AI TUTOR -->
+<button id="tutor-toggle" data-label="tutor" class="fixed bottom-4 right-4 bg-emerald-900 text-white rounded px-4 py-3 text-sm font-medium shadow hover:bg-emerald-800 z-30">AI Tutor</button>
+
+<div id="tutor-panel" class="hidden fixed bottom-20 right-4 w-80 max-w-[90vw] border border-slate-300 rounded bg-white shadow-lg z-30 flex flex-col" style="height: 26rem;">
+  <div class="flex justify-between items-center px-3 py-2 border-b border-slate-200 bg-emerald-900 rounded-t">
+    <span class="text-white text-sm font-medium">ZimScope AI Tutor</span>
+    <button id="tutor-close" class="text-white text-sm">Close</button>
+  </div>
+  <div id="tutor-key-notice" class="hidden text-xs text-amber-800 bg-amber-50 border-b border-amber-200 px-3 py-2"></div>
+  <div id="tutor-log" class="flex-1 overflow-y-auto px-3 py-3 space-y-2"></div>
+  <form id="tutor-form" class="border-t border-slate-200 p-2 flex gap-2">
+    <input id="tutor-input" type="text" placeholder="Ask a study question..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-sm focus:outline focus:outline-2 focus:outline-amber-600" />
+    <button type="submit" class="bg-emerald-900 text-white rounded px-3 py-1 text-sm font-medium hover:bg-emerald-800">Send</button>
+  </form>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+<script src="ai-tutor.js"></script>
+<script>
+  // Show nav / logout once a user is authenticated; hide auth screen elements otherwise.
+  auth.onAuthStateChanged(user => {
+    document.getElementById("main-nav").classList.toggle("hidden", !user);
+    document.getElementById("logout-btn").classList.toggle("hidden", !user);
+    document.getElementById("lang-select").classList.toggle("hidden", !user);
+  });
+
+  // PWA service worker registration (enables offline caching of the app shell).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(err => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
